@@ -1,0 +1,796 @@
+{
+  "info": {
+    "name": "BookMyVenue API",
+    "description": "Complete API collection for BookMyVenue — a location-based venue discovery and booking platform targeting Kerala, India.\n\n## Setup\n1. Import this collection into Postman\n2. Set the `baseUrl` variable to `http://localhost:3000/api`\n3. Register or login — the collection auto-saves `accessToken` and `refreshToken` from login/register responses\n4. All protected routes will automatically use the saved token via the collection-level Auth header",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl",      "value": "http://localhost:3000/api", "type": "string" },
+    { "key": "accessToken",  "value": "",  "type": "string" },
+    { "key": "refreshToken", "value": "",  "type": "string" },
+    { "key": "venueId",      "value": "",  "type": "string" },
+    { "key": "bookingId",    "value": "",  "type": "string" },
+    { "key": "paymentId",    "value": "",  "type": "string" },
+    { "key": "userId",       "value": "",  "type": "string" },
+    { "key": "notifId",      "value": "",  "type": "string" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "🔐 Auth",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success) {",
+                  "  pm.collectionVariables.set('accessToken',  res.data.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', res.data.refreshToken);",
+                  "  pm.collectionVariables.set('userId',       res.data.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth","register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"testuser@example.com\",\n  \"password\": \"password123\",\n  \"role\": \"USER\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Register as Owner",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth","register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Demo Owner\",\n  \"email\": \"owner@bookmyvenue.in\",\n  \"password\": \"password123\",\n  \"role\": \"OWNER\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success) {",
+                  "  pm.collectionVariables.set('accessToken',  res.data.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', res.data.refreshToken);",
+                  "  pm.collectionVariables.set('userId',       res.data.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth","login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"testuser@example.com\",\n  \"password\": \"password123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login as Owner",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success) {",
+                  "  pm.collectionVariables.set('accessToken',  res.data.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', res.data.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth","login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"owner@bookmyvenue.in\",\n  \"password\": \"password123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login as Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success) {",
+                  "  pm.collectionVariables.set('accessToken',  res.data.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', res.data.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth","login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@bookmyvenue.in\",\n  \"password\": \"admin1234\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Google OAuth",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/google", "host": ["{{baseUrl}}"], "path": ["auth","google"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idToken\": \"<GOOGLE_ID_TOKEN_HERE>\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success) {",
+                  "  pm.collectionVariables.set('accessToken',  res.data.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', res.data.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/refresh", "host": ["{{baseUrl}}"], "path": ["auth","refresh"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/logout", "host": ["{{baseUrl}}"], "path": ["auth","logout"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Verify Email",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/verify-email", "host": ["{{baseUrl}}"], "path": ["auth","verify-email"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"<TOKEN_FROM_EMAIL>\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/forgot-password", "host": ["{{baseUrl}}"], "path": ["auth","forgot-password"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"testuser@example.com\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/reset-password", "host": ["{{baseUrl}}"], "path": ["auth","reset-password"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"<TOKEN_FROM_EMAIL>\",\n  \"password\": \"newpassword123\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "👤 Users",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/users/me", "host": ["{{baseUrl}}"], "path": ["users","me"] }
+          }
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/users/me", "host": ["{{baseUrl}}"], "path": ["users","me"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Name\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/users/me/password", "host": ["{{baseUrl}}"], "path": ["users","me","password"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"password123\",\n  \"newPassword\": \"newsecurepass456\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏛️ Venues",
+      "item": [
+        {
+          "name": "Get All Venues (Filtered)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/venues?page=1&limit=12",
+              "host": ["{{baseUrl}}"],
+              "path": ["venues"],
+              "query": [
+                { "key": "page",        "value": "1" },
+                { "key": "limit",       "value": "12" },
+                { "key": "type",        "value": "birthday_hall", "disabled": true },
+                { "key": "city",        "value": "Kochi",         "disabled": true },
+                { "key": "minCapacity", "value": "50",            "disabled": true },
+                { "key": "maxCapacity", "value": "500",           "disabled": true },
+                { "key": "minPrice",    "value": "1000",          "disabled": true },
+                { "key": "maxPrice",    "value": "10000",         "disabled": true },
+                { "key": "date",        "value": "2026-06-15",    "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search Venues",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/venues/search?q=banquet",
+              "host": ["{{baseUrl}}"],
+              "path": ["venues","search"],
+              "query": [{ "key": "q", "value": "banquet" }]
+            }
+          }
+        },
+        {
+          "name": "Get Nearby Venues",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/venues/nearby?lat=9.9312&lng=76.2673&radius=15",
+              "host": ["{{baseUrl}}"],
+              "path": ["venues","nearby"],
+              "query": [
+                { "key": "lat",    "value": "9.9312"  },
+                { "key": "lng",    "value": "76.2673" },
+                { "key": "radius", "value": "15"      }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Venue by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success) pm.collectionVariables.set('venueId', res.data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/venues/{{venueId}}", "host": ["{{baseUrl}}"], "path": ["venues","{{venueId}}"] }
+          }
+        },
+        {
+          "name": "Get Venue Availability",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/venues/{{venueId}}/availability?date=2026-06-15",
+              "host": ["{{baseUrl}}"],
+              "path": ["venues","{{venueId}}","availability"],
+              "query": [{ "key": "date", "value": "2026-06-15" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📅 Bookings",
+      "item": [
+        {
+          "name": "Create Booking",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success) pm.collectionVariables.set('bookingId', res.data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/bookings", "host": ["{{baseUrl}}"], "path": ["bookings"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"venueId\": \"{{venueId}}\",\n  \"date\": \"2026-06-15\",\n  \"startTime\": \"10:00\",\n  \"endTime\": \"14:00\",\n  \"guestCount\": 80\n}"
+            }
+          }
+        },
+        {
+          "name": "Get My Bookings",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/bookings", "host": ["{{baseUrl}}"], "path": ["bookings"] }
+          }
+        },
+        {
+          "name": "Get Booking by ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/bookings/{{bookingId}}", "host": ["{{baseUrl}}"], "path": ["bookings","{{bookingId}}"] }
+          }
+        },
+        {
+          "name": "Cancel Booking",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/bookings/{{bookingId}}", "host": ["{{baseUrl}}"], "path": ["bookings","{{bookingId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "💳 Payments",
+      "item": [
+        {
+          "name": "Initiate Payment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success) pm.collectionVariables.set('razorpayOrderId', res.data.orderId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/payments/initiate", "host": ["{{baseUrl}}"], "path": ["payments","initiate"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bookingId\": \"{{bookingId}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Razorpay Webhook (simulate)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",          "value": "application/json" },
+              { "key": "x-razorpay-signature",  "value": "<WEBHOOK_SIGNATURE>" }
+            ],
+            "url": { "raw": "{{baseUrl}}/payments/webhook", "host": ["{{baseUrl}}"], "path": ["payments","webhook"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"payment.captured\",\n  \"payload\": {\n    \"payment\": {\n      \"entity\": {\n        \"id\": \"pay_XXXXXXXX\",\n        \"order_id\": \"order_XXXXXXXX\"\n      }\n    }\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Request Refund",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/payments/refunds/{{bookingId}}", "host": ["{{baseUrl}}"], "path": ["payments","refunds","{{bookingId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏢 Owner",
+      "description": "Requires OWNER or ADMIN role. Login with owner@bookmyvenue.in / password123 first.",
+      "item": [
+        {
+          "name": "Submit New Venue",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success) pm.collectionVariables.set('venueId', res.data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/owner/venues", "host": ["{{baseUrl}}"], "path": ["owner","venues"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"My New Venue\",\n  \"description\": \"A wonderful venue for all occasions.\",\n  \"type\": \"birthday_hall\",\n  \"address\": \"123 Main Street, Ernakulam\",\n  \"city\": \"Kochi\",\n  \"latitude\": 9.9312,\n  \"longitude\": 76.2673,\n  \"capacityMin\": 50,\n  \"capacityMax\": 300,\n  \"pricePerHour\": 3000,\n  \"priceHalfDay\": 10000,\n  \"priceFullDay\": 18000,\n  \"amenities\": [\"AC\", \"Parking\", \"WiFi\", \"Catering\"]\n}"
+            }
+          }
+        },
+        {
+          "name": "Get My Venues",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/owner/venues", "host": ["{{baseUrl}}"], "path": ["owner","venues"] }
+          }
+        },
+        {
+          "name": "Get My Venue by ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/owner/venues/{{venueId}}", "host": ["{{baseUrl}}"], "path": ["owner","venues","{{venueId}}"] }
+          }
+        },
+        {
+          "name": "Update Venue",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/owner/venues/{{venueId}}", "host": ["{{baseUrl}}"], "path": ["owner","venues","{{venueId}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"My Updated Venue Name\",\n  \"pricePerHour\": 3500,\n  \"amenities\": [\"AC\", \"Parking\", \"WiFi\", \"Catering\", \"DJ\"]\n}"
+            }
+          }
+        },
+        {
+          "name": "Set Venue Status (Activate/Deactivate)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/owner/venues/{{venueId}}/status", "host": ["{{baseUrl}}"], "path": ["owner","venues","{{venueId}}","status"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"INACTIVE\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Venue",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/owner/venues/{{venueId}}", "host": ["{{baseUrl}}"], "path": ["owner","venues","{{venueId}}"] }
+          }
+        },
+        {
+          "name": "Set Availability",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/owner/venues/{{venueId}}/availability", "host": ["{{baseUrl}}"], "path": ["owner","venues","{{venueId}}","availability"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"2026-06-20\",\n  \"slots\": [\n    { \"time\": \"08:00\", \"available\": true },\n    { \"time\": \"09:00\", \"available\": true },\n    { \"time\": \"10:00\", \"available\": true },\n    { \"time\": \"11:00\", \"available\": true },\n    { \"time\": \"12:00\", \"available\": false },\n    { \"time\": \"13:00\", \"available\": false },\n    { \"time\": \"14:00\", \"available\": true },\n    { \"time\": \"15:00\", \"available\": true },\n    { \"time\": \"16:00\", \"available\": true },\n    { \"time\": \"17:00\", \"available\": true },\n    { \"time\": \"18:00\", \"available\": true },\n    { \"time\": \"19:00\", \"available\": true },\n    { \"time\": \"20:00\", \"available\": true }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Incoming Bookings",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/owner/bookings", "host": ["{{baseUrl}}"], "path": ["owner","bookings"] }
+          }
+        },
+        {
+          "name": "Get Booking by ID (Owner)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/owner/bookings/{{bookingId}}", "host": ["{{baseUrl}}"], "path": ["owner","bookings","{{bookingId}}"] }
+          }
+        },
+        {
+          "name": "Accept Booking",
+          "request": {
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/owner/bookings/{{bookingId}}/accept", "host": ["{{baseUrl}}"], "path": ["owner","bookings","{{bookingId}}","accept"] }
+          }
+        },
+        {
+          "name": "Decline Booking",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/owner/bookings/{{bookingId}}/decline", "host": ["{{baseUrl}}"], "path": ["owner","bookings","{{bookingId}}","decline"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Venue unavailable for maintenance\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Analytics",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/owner/analytics", "host": ["{{baseUrl}}"], "path": ["owner","analytics"] }
+          }
+        },
+        {
+          "name": "Get Payouts",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/owner/payouts", "host": ["{{baseUrl}}"], "path": ["owner","payouts"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🛡️ Admin",
+      "description": "Requires ADMIN role. Login with admin@bookmyvenue.in / admin1234 first.",
+      "item": [
+        {
+          "name": "Get Pending Venues",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/admin/venues/pending", "host": ["{{baseUrl}}"], "path": ["admin","venues","pending"] }
+          }
+        },
+        {
+          "name": "Approve Venue",
+          "request": {
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/admin/venues/{{venueId}}/approve", "host": ["{{baseUrl}}"], "path": ["admin","venues","{{venueId}}","approve"] }
+          }
+        },
+        {
+          "name": "Reject Venue",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/admin/venues/{{venueId}}/reject", "host": ["{{baseUrl}}"], "path": ["admin","venues","{{venueId}}","reject"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"note\": \"Photos are low quality. Please re-submit with clearer images.\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get All Venues",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/admin/venues?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin","venues"],
+              "query": [
+                { "key": "page",  "value": "1"  },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Force Delete Venue",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/admin/venues/{{venueId}}", "host": ["{{baseUrl}}"], "path": ["admin","venues","{{venueId}}"] }
+          }
+        },
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/admin/users?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin","users"],
+              "query": [
+                { "key": "page",  "value": "1"  },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Suspend User",
+          "request": {
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/admin/users/{{userId}}/suspend", "host": ["{{baseUrl}}"], "path": ["admin","users","{{userId}}","suspend"] }
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/admin/users/{{userId}}", "host": ["{{baseUrl}}"], "path": ["admin","users","{{userId}}"] }
+          }
+        },
+        {
+          "name": "Get All Bookings",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/admin/bookings?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin","bookings"],
+              "query": [
+                { "key": "page",  "value": "1"  },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get All Payments",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/admin/payments?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin","payments"],
+              "query": [
+                { "key": "page",  "value": "1"  },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Flag Payment (Dispute)",
+          "request": {
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/admin/payments/{{paymentId}}/flag", "host": ["{{baseUrl}}"], "path": ["admin","payments","{{paymentId}}","flag"] }
+          }
+        },
+        {
+          "name": "Platform Analytics",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/admin/analytics", "host": ["{{baseUrl}}"], "path": ["admin","analytics"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🖼️ Media",
+      "description": "Requires OWNER or ADMIN role.",
+      "item": [
+        {
+          "name": "Upload Photos",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/media/upload", "host": ["{{baseUrl}}"], "path": ["media","upload"] },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "photos",
+                  "type": "file",
+                  "description": "JPEG/PNG/WebP — max 5 MB each, up to 10 files"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Photo",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/media/<PUBLIC_ID>", "host": ["{{baseUrl}}"], "path": ["media","<PUBLIC_ID>"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔔 Notifications",
+      "item": [
+        {
+          "name": "Get Notifications",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/notifications?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications"],
+              "query": [
+                { "key": "page",  "value": "1"  },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Mark Notification as Read",
+          "request": {
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/notifications/{{notifId}}/read", "host": ["{{baseUrl}}"], "path": ["notifications","{{notifId}}","read"] }
+          }
+        },
+        {
+          "name": "Mark All as Read",
+          "request": {
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/notifications/read-all", "host": ["{{baseUrl}}"], "path": ["notifications","read-all"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🩺 Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "http://localhost:3000/health", "host": ["http://localhost:3000"], "path": ["health"] }
+          }
+        }
+      ]
+    }
+  ]
+}

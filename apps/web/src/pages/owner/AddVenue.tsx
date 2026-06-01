@@ -1,13 +1,17 @@
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
+import { ImagePlus, X } from 'lucide-react';
 import { api } from '@/lib/axios';
 import { VenueType, VENUE_TYPE_LABELS } from '@/types';
 import { Input, Textarea, Select } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { toast } from '@/store/ui.store';
+
+const MAX_PHOTOS = 5;
 
 const AMENITIES = [
   'WiFi', 'Parking', 'AC', 'Projector', 'Sound System', 'Catering',
@@ -34,6 +38,10 @@ type FormData = z.infer<typeof schema>;
 
 export default function AddVenue() {
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [photos, setPhotos] = useState<File[]>([]);
+  const [photoError, setPhotoError] = useState('');
+
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { amenities: [] },
@@ -41,14 +49,58 @@ export default function AddVenue() {
 
   const selectedAmenities = watch('amenities') ?? [];
 
+  const onFilePick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const picked = Array.from(e.target.files ?? []);
+    if (!picked.length) return;
+    const combined = [...photos, ...picked].slice(0, MAX_PHOTOS);
+    setPhotos(combined);
+    setPhotoError('');
+    e.target.value = '';
+  };
+
+  const removePhoto = (index: number) => {
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const { mutate: createVenue, isPending } = useMutation({
-    mutationFn: (data: FormData) => api.post('/owner/venues', data),
+    mutationFn: (data: FormData) => {
+      if (photos.length === 0) throw new Error('At least 1 photo is required.');
+
+      const form = new FormData();
+      form.append('name', data.name);
+      form.append('description', data.description);
+      form.append('type', data.type);
+      form.append('address', data.address);
+      form.append('city', data.city);
+      form.append('latitude', String(data.latitude));
+      form.append('longitude', String(data.longitude));
+      form.append('capacityMin', String(data.capacityMin));
+      form.append('capacityMax', String(data.capacityMax));
+      if (data.pricePerHour) form.append('pricePerHour', String(data.pricePerHour));
+      if (data.priceHalfDay) form.append('priceHalfDay', String(data.priceHalfDay));
+      if (data.priceFullDay) form.append('priceFullDay', String(data.priceFullDay));
+      form.append('amenities', JSON.stringify(data.amenities ?? []));
+      photos.forEach((f) => form.append('photos', f));
+
+      return api.post('/owner/venues', form);
+    },
     onSuccess: () => {
       toast.success('Venue submitted for review!');
       navigate('/owner/venues');
     },
-    onError: () => toast.error('Failed to create venue'),
+    onError: (err: any) => {
+      const msg = err?.response?.data?.error?.message ?? err?.message ?? 'Failed to create venue';
+      toast.error(msg);
+    },
   });
+
+  const onSubmit = (data: FormData) => {
+    if (photos.length === 0) {
+      setPhotoError('At least 1 photo is required.');
+      return;
+    }
+    createVenue(data);
+  };
 
   const toggleAmenity = (a: string) => {
     const current = selectedAmenities;
@@ -63,13 +115,94 @@ export default function AddVenue() {
         <h1 className="font-display text-3xl font-semibold text-navy mb-2">Add New Venue</h1>
         <p className="text-muted text-sm mb-8">Your venue will be reviewed by our team before going live.</p>
 
-        <form onSubmit={handleSubmit((data) => createVenue(data))} className="space-y-8">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+
           {/* Basic Info */}
           <div className="bg-white rounded-2xl shadow-card p-6 space-y-4">
             <h2 className="font-semibold text-navy">Basic Information</h2>
             <Input label="Venue Name" {...register('name')} error={errors.name?.message} />
             <Textarea label="Description" rows={4} {...register('description')} error={errors.description?.message} />
             <Select label="Venue Type" options={typeOptions} {...register('type')} error={errors.type?.message} />
+          </div>
+
+          {/* Photos */}
+          <div className="bg-white rounded-2xl shadow-card p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="font-semibold text-navy">Photos</h2>
+                <p className="text-xs text-muted mt-0.5">{photos.length}/{MAX_PHOTOS} — minimum 1 required</p>
+              </div>
+              {photos.length < MAX_PHOTOS && (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary-dark transition-colors"
+                >
+                  <ImagePlus size={15} /> Add photos
+                </button>
+              )}
+            </div>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              multiple
+              className="hidden"
+              onChange={onFilePick}
+            />
+
+            {photos.length === 0 ? (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className={`w-full border-2 border-dashed rounded-2xl py-10 flex flex-col items-center gap-2 transition-colors ${
+                  photoError
+                    ? 'border-error text-error bg-red-50'
+                    : 'border-border text-muted hover:border-primary/40 hover:text-primary'
+                }`}
+              >
+                <ImagePlus size={28} />
+                <span className="text-sm font-medium">Click to add photos</span>
+                <span className="text-xs">JPEG, PNG or WebP · max 5 MB each · up to 5 photos</span>
+              </button>
+            ) : (
+              <div className="grid grid-cols-3 gap-2">
+                {photos.map((file, i) => (
+                  <div key={i} className="relative aspect-video rounded-xl overflow-hidden bg-slate-100 group">
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt={`Photo ${i + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                    {i === 0 && (
+                      <span className="absolute top-1.5 left-1.5 bg-primary text-white text-[10px] font-medium px-1.5 py-0.5 rounded-full">
+                        Cover
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => removePhoto(i)}
+                      className="absolute top-1.5 right-1.5 w-5 h-5 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center transition-colors"
+                    >
+                      <X size={11} />
+                    </button>
+                  </div>
+                ))}
+                {photos.length < MAX_PHOTOS && (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="aspect-video rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-1 text-muted hover:border-primary/40 hover:text-primary transition-colors"
+                  >
+                    <ImagePlus size={18} />
+                    <span className="text-[11px] font-medium">Add more</span>
+                  </button>
+                )}
+              </div>
+            )}
+
+            {photoError && <p className="text-xs text-error">{photoError}</p>}
           </div>
 
           {/* Location */}

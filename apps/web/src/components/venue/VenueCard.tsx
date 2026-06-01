@@ -11,7 +11,7 @@ interface VenueCardProps {
 }
 
 export function VenueCard({ venue, className }: VenueCardProps) {
-  const photo = venue.photos?.[0];
+  const photo = venue.photos?.[0]?.url;
   const gradient = getVenuePlaceholderGradient(venue.name);
 
   return (

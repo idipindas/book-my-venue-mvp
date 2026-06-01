@@ -75,7 +75,7 @@ export default function MyVenues() {
               >
                 <div className="h-36 relative">
                   {v.photos?.[0] ? (
-                    <img src={v.photos[0]} alt={v.name} className="w-full h-full object-cover" />
+                    <img src={v.photos[0].url} alt={v.name} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full bg-teal-gradient flex items-center justify-center">
                       <Building2 size={40} className="text-white/60" />

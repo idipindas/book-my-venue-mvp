@@ -12,7 +12,11 @@ const paymentRepo = () => AppDataSource.getRepository(Payment);
 
 export const AdminService = {
   async getPendingVenues() {
-    return venueRepo().find({ where: { status: VenueStatus.PENDING }, relations: ['owner'] });
+    return venueRepo().find({
+      where: { status: VenueStatus.PENDING },
+      relations: ['owner', 'photos'],
+      order: { createdAt: 'DESC', photos: { position: 'ASC' } },
+    });
   },
 
   async approveVenue(id: string) {

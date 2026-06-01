@@ -6,7 +6,11 @@ import type { CreateVenueDto, UpdateVenueDto, SetAvailabilityDto, DeclineBooking
 export const OwnerController = {
   async createVenue(req: Request, res: Response, next: NextFunction) {
     try {
-      const data = await OwnerService.createVenue(req.user!.id, req.body as CreateVenueDto);
+      const data = await OwnerService.createVenue(
+        req.user!.id,
+        req.body as CreateVenueDto,
+        (req.files as Express.Multer.File[]) ?? [],
+      );
       res.status(201).json({ success: true, data });
     } catch (err) { next(err); }
   },
@@ -84,6 +88,34 @@ export const OwnerController = {
   async getAnalytics(req: Request, res: Response, next: NextFunction) {
     try {
       const data = await OwnerService.getAnalytics(req.user!.id);
+      res.json({ success: true, data });
+    } catch (err) { next(err); }
+  },
+
+  async uploadVenuePhotos(req: Request, res: Response, next: NextFunction) {
+    try {
+      const files = req.files as Express.Multer.File[];
+      const data = await OwnerService.uploadVenuePhotos(req.user!.id, req.params.id, files ?? []);
+      res.status(201).json({ success: true, data });
+    } catch (err) { next(err); }
+  },
+
+  async deleteVenuePhoto(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { url } = req.body as { url: string };
+      if (!url)
+        return res.status(400).json({ success: false, error: { code: 'MISSING_URL', message: 'url is required.' } });
+      const data = await OwnerService.deleteVenuePhoto(req.user!.id, req.params.id, url);
+      res.json({ success: true, data });
+    } catch (err) { next(err); }
+  },
+
+  async reorderVenuePhotos(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { ids } = req.body as { ids: string[] };
+      if (!Array.isArray(ids))
+        return res.status(400).json({ success: false, error: { code: 'INVALID_BODY', message: 'ids must be an array of photo IDs.' } });
+      const data = await OwnerService.reorderVenuePhotos(req.user!.id, req.params.id, ids);
       res.json({ success: true, data });
     } catch (err) { next(err); }
   },

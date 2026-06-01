@@ -73,7 +73,8 @@ export const VenueService = {
   async findById(id: string) {
     const venue = await venueRepo().findOne({
       where: { id },
-      relations: ['owner'],
+      relations: ['owner', 'photos'],
+      order: { photos: { position: 'ASC' } },
     });
     if (!venue) throw new AppError('VENUE_NOT_FOUND', 'Venue not found.', 404);
     return venue;

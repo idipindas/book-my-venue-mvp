@@ -64,7 +64,7 @@ export default function VenueDetail() {
               <div className="aspect-[16/9] relative">
                 {venue.photos.length > 0 ? (
                   <img
-                    src={venue.photos[photoIndex]}
+                    src={venue.photos[photoIndex].url}
                     alt={venue.name}
                     className="w-full h-full object-cover"
                   />
@@ -83,14 +83,14 @@ export default function VenueDetail() {
                 <div className="flex gap-2 p-3 overflow-x-auto scrollbar-thin">
                   {venue.photos.map((photo, i) => (
                     <button
-                      key={i}
+                      key={photo.id}
                       onClick={() => setPhotoIndex(i)}
                       className={cn(
                         'shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all',
                         photoIndex === i ? 'border-primary' : 'border-transparent opacity-60 hover:opacity-100'
                       )}
                     >
-                      <img src={photo} alt="" className="w-full h-full object-cover" />
+                      <img src={photo.url} alt="" className="w-full h-full object-cover" />
                     </button>
                   ))}
                 </div>

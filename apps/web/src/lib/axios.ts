@@ -6,6 +6,11 @@ export const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
+  // Let the browser set Content-Type + boundary for multipart requests
+  if (config.data instanceof FormData) {
+    delete config.headers['Content-Type'];
+  }
+
   // Dynamically get token to avoid stale closure
   const stored = localStorage.getItem('bmv-auth');
   if (stored) {

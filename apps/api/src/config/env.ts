@@ -17,6 +17,8 @@ export const config = {
 
   DATABASE_URL: required('DATABASE_URL'),
   REDIS_URL: optional('REDIS_URL', 'redis://localhost:6379'),
+  UPSTASH_REDIS_REST_URL: optional('UPSTASH_REDIS_REST_URL', ''),
+  UPSTASH_REDIS_REST_TOKEN: optional('UPSTASH_REDIS_REST_TOKEN', ''),
 
   JWT_ACCESS_SECRET: required('JWT_ACCESS_SECRET'),
   JWT_REFRESH_SECRET: required('JWT_REFRESH_SECRET'),

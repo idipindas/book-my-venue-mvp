@@ -1,26 +1,69 @@
 import { AppDataSource } from '../../config/database';
 import { Venue, VenueStatus } from '../../entities/Venue.entity';
+import { VenuePhoto } from '../../entities/VenuePhoto.entity';
 import { Availability } from '../../entities/Availability.entity';
 import { Booking, BookingStatus } from '../../entities/Booking.entity';
 import { AppError } from '../../lib/errors';
+import { cloudinary, deleteCloudinaryAsset } from '../../lib/cloudinary';
 import type { CreateVenueDto, UpdateVenueDto, SetAvailabilityDto } from './owner.dto';
+
+const MAX_PHOTOS = 5;
+const photoRepo = () => AppDataSource.getRepository(VenuePhoto);
 
 const venueRepo = () => AppDataSource.getRepository(Venue);
 const availRepo = () => AppDataSource.getRepository(Availability);
 const bookingRepo = () => AppDataSource.getRepository(Booking);
 
+function uploadVenueImage(venueId: string, file: Express.Multer.File) {
+  return new Promise<{ url: string; publicId: string }>((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: `bookmyvenue/venues/${venueId}`, resource_type: 'image' },
+      (error, result) => {
+        if (error || !result) return reject(error ?? new Error('Upload failed'));
+        resolve({ url: result.secure_url, publicId: result.public_id });
+      },
+    );
+    stream.end(file.buffer);
+  });
+}
+
 export const OwnerService = {
-  async createVenue(ownerId: string, dto: CreateVenueDto) {
+  async createVenue(ownerId: string, dto: CreateVenueDto, files: Express.Multer.File[]) {
     const venue = venueRepo().create({ ...dto, ownerId, status: VenueStatus.PENDING });
-    return venueRepo().save(venue);
+    const savedVenue = await venueRepo().save(venue);
+
+    const uploaded: { url: string; publicId: string }[] = [];
+    try {
+      for (const file of files) {
+        const result = await uploadVenueImage(savedVenue.id, file);
+        uploaded.push(result);
+      }
+      const photos = uploaded.map((r, i) =>
+        photoRepo().create({ venueId: savedVenue.id, ownerId, url: r.url, publicId: r.publicId, position: i }),
+      );
+      await photoRepo().save(photos);
+      return this.getMyVenueById(ownerId, savedVenue.id);
+    } catch (err) {
+      await Promise.all(uploaded.map((u) => deleteCloudinaryAsset(u.publicId).catch(() => undefined)));
+      await venueRepo().delete(savedVenue.id).catch(() => undefined);
+      throw new AppError('VENUE_CREATE_FAILED', 'Failed to upload venue photos.', 500);
+    }
   },
 
   async getMyVenues(ownerId: string) {
-    return venueRepo().find({ where: { ownerId }, order: { createdAt: 'DESC' } });
+    return venueRepo().find({
+      where: { ownerId },
+      relations: ['photos'],
+      order: { createdAt: 'DESC', photos: { position: 'ASC' } },
+    });
   },
 
   async getMyVenueById(ownerId: string, id: string) {
-    const venue = await venueRepo().findOne({ where: { id, ownerId } });
+    const venue = await venueRepo().findOne({
+      where: { id, ownerId },
+      relations: ['photos'],
+      order: { photos: { position: 'ASC' } },
+    });
     if (!venue) throw new AppError('VENUE_NOT_FOUND', 'Venue not found.', 404);
     return venue;
   },
@@ -99,6 +142,83 @@ export const OwnerService = {
     booking.cancelReason = reason ?? 'Declined by owner';
     booking.cancelledAt = new Date();
     return bookingRepo().save(booking);
+  },
+
+  async uploadVenuePhotos(ownerId: string, venueId: string, files: Express.Multer.File[]) {
+    await this.getMyVenueById(ownerId, venueId);
+
+    if (files.length === 0)
+      throw new AppError('NO_FILES', 'At least 1 photo is required.', 400);
+
+    const existing = await photoRepo().find({ where: { venueId }, order: { position: 'ASC' } });
+
+    if (existing.length + files.length > MAX_PHOTOS)
+      throw new AppError(
+        'TOO_MANY_PHOTOS',
+        `A venue can have at most ${MAX_PHOTOS} photos. Currently has ${existing.length}.`,
+        400,
+      );
+
+    const uploadResults = await Promise.all(
+      files.map((file) => uploadVenueImage(venueId, file)),
+    );
+
+    const newPhotos = uploadResults.map((r, i) =>
+      photoRepo().create({
+        venueId,
+        ownerId,
+        url: r.url,
+        publicId: r.publicId,
+        position: existing.length + i,
+      }),
+    );
+
+    await photoRepo().save(newPhotos);
+    return photoRepo().find({ where: { venueId }, order: { position: 'ASC' } });
+  },
+
+  async deleteVenuePhoto(ownerId: string, venueId: string, url: string) {
+    await this.getMyVenueById(ownerId, venueId);
+
+    const photo = await photoRepo().findOne({ where: { venueId, url } });
+    if (!photo)
+      throw new AppError('PHOTO_NOT_FOUND', 'Photo not found on this venue.', 404);
+
+    const count = await photoRepo().count({ where: { venueId } });
+    if (count === 1)
+      throw new AppError('MIN_PHOTOS', 'A venue must have at least 1 photo.', 400);
+
+    try {
+      await deleteCloudinaryAsset(photo.publicId);
+    } catch {
+      // swallow — asset may already be gone from Cloudinary
+    }
+
+    await photoRepo().remove(photo);
+
+    // resequence positions so there are no gaps
+    const remaining = await photoRepo().find({ where: { venueId }, order: { position: 'ASC' } });
+    await Promise.all(
+      remaining.map((p, i) => photoRepo().update(p.id, { position: i })),
+    );
+
+    return photoRepo().find({ where: { venueId }, order: { position: 'ASC' } });
+  },
+
+  async reorderVenuePhotos(ownerId: string, venueId: string, ids: string[]) {
+    await this.getMyVenueById(ownerId, venueId);
+
+    const existing = await photoRepo().find({ where: { venueId } });
+    const existingIds = existing.map((p) => p.id);
+
+    if (ids.length !== existingIds.length || !ids.every((id) => existingIds.includes(id)))
+      throw new AppError('INVALID_PHOTOS', 'Reorder list must contain exactly the same photo IDs as the venue.', 400);
+
+    await Promise.all(
+      ids.map((id, i) => photoRepo().update(id, { position: i })),
+    );
+
+    return photoRepo().find({ where: { venueId }, order: { position: 'ASC' } });
   },
 
   async getAnalytics(ownerId: string) {

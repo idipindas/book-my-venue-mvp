@@ -47,6 +47,16 @@ export interface User {
   updatedAt: string;
 }
 
+export interface VenuePhoto {
+  id: string;
+  venueId: string;
+  ownerId: string;
+  url: string;
+  publicId: string;
+  position: number;
+  createdAt: string;
+}
+
 export interface Venue {
   id: string;
   ownerId: string;
@@ -64,7 +74,7 @@ export interface Venue {
   priceHalfDay: number | null;
   priceFullDay: number | null;
   amenities: string[];
-  photos: string[];
+  photos: VenuePhoto[];
   status: VenueStatus;
   rejectedNote: string | null;
   owner?: User;

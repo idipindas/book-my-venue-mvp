@@ -9,3 +9,4 @@ export const redis = new Redis(config.REDIS_URL, {
 
 redis.on('error', (err) => logger.error({ err }, 'Redis error'));
 redis.on('connect', () => logger.info('Redis connected'));
+  

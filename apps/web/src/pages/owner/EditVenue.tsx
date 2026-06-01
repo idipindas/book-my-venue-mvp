@@ -10,6 +10,7 @@ import { Input, Textarea, Select } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { PageSpinner } from '@/components/ui/Spinner';
 import { toast } from '@/store/ui.store';
+import { VenuePhotoManager } from '@/components/venue/VenuePhotoManager';
 
 const AMENITIES = [
   'WiFi', 'Parking', 'AC', 'Projector', 'Sound System', 'Catering',
@@ -160,6 +161,11 @@ export default function EditVenue() {
             </Button>
           </div>
         </form>
+
+        {/* Photo management — separate from the venue form */}
+        <div className="bg-white rounded-2xl shadow-card p-6 mt-8">
+          <VenuePhotoManager venueId={id!} />
+        </div>
       </div>
     </div>
   );

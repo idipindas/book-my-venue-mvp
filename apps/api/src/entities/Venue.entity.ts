@@ -83,8 +83,8 @@ export class Venue {
   @Column('text', { array: true, default: [] })
   amenities: string[];
 
-  @Column('text', { array: true, default: [] })
-  photos: string[];
+  @OneToMany('VenuePhoto', 'venue')
+  photos: import('./VenuePhoto.entity').VenuePhoto[];
 
   @Index()
   @Column({ type: 'enum', enum: VenueStatus, default: VenueStatus.PENDING })

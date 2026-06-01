@@ -13,8 +13,11 @@ export async function deleteCloudinaryAsset(publicId: string): Promise<void> {
   await cloudinary.uploader.destroy(publicId);
 }
 
+// Extracts the full public ID (folder/name) from a Cloudinary secure URL.
+// e.g. https://res.cloudinary.com/cloud/image/upload/v123/bookmyvenue/venues/vid/abc.jpg
+//   → bookmyvenue/venues/vid/abc
 export function extractPublicId(url: string): string {
-  const parts = url.split('/');
-  const filename = parts[parts.length - 1];
-  return filename.split('.')[0];
+  const match = url.match(/\/upload\/(?:v\d+\/)?(.+?)(?:\.[^.]+)?$/);
+  if (!match) throw new Error(`Cannot extract public ID from URL: ${url}`);
+  return match[1];
 }

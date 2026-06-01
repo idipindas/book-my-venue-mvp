@@ -12,7 +12,8 @@
     { "key": "bookingId",    "value": "",  "type": "string" },
     { "key": "paymentId",    "value": "",  "type": "string" },
     { "key": "userId",       "value": "",  "type": "string" },
-    { "key": "notifId",      "value": "",  "type": "string" }
+    { "key": "notifId",      "value": "",  "type": "string" },
+    { "key": "photoUrl",     "value": "",  "type": "string" }
   ],
   "auth": {
     "type": "bearer",
@@ -474,11 +475,25 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "url": { "raw": "{{baseUrl}}/owner/venues", "host": ["{{baseUrl}}"], "path": ["owner","venues"] },
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"My New Venue\",\n  \"description\": \"A wonderful venue for all occasions.\",\n  \"type\": \"birthday_hall\",\n  \"address\": \"123 Main Street, Ernakulam\",\n  \"city\": \"Kochi\",\n  \"latitude\": 9.9312,\n  \"longitude\": 76.2673,\n  \"capacityMin\": 50,\n  \"capacityMax\": 300,\n  \"pricePerHour\": 3000,\n  \"priceHalfDay\": 10000,\n  \"priceFullDay\": 18000,\n  \"amenities\": [\"AC\", \"Parking\", \"WiFi\", \"Catering\"]\n}"
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name", "value": "My New Venue", "type": "text" },
+                { "key": "description", "value": "A wonderful venue for all occasions.", "type": "text" },
+                { "key": "type", "value": "birthday_hall", "type": "text" },
+                { "key": "address", "value": "123 Main Street, Ernakulam", "type": "text" },
+                { "key": "city", "value": "Kochi", "type": "text" },
+                { "key": "latitude", "value": "9.9312", "type": "text" },
+                { "key": "longitude", "value": "76.2673", "type": "text" },
+                { "key": "capacityMin", "value": "50", "type": "text" },
+                { "key": "capacityMax", "value": "300", "type": "text" },
+                { "key": "pricePerHour", "value": "3000", "type": "text" },
+                { "key": "priceHalfDay", "value": "10000", "type": "text" },
+                { "key": "priceFullDay", "value": "18000", "type": "text" },
+                { "key": "amenities", "value": "[\"AC\",\"Parking\",\"WiFi\",\"Catering\"]", "type": "text" },
+                { "key": "photo", "type": "file", "src": [] }
+              ]
             }
           }
         },
@@ -536,6 +551,61 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"date\": \"2026-06-20\",\n  \"slots\": [\n    { \"time\": \"08:00\", \"available\": true },\n    { \"time\": \"09:00\", \"available\": true },\n    { \"time\": \"10:00\", \"available\": true },\n    { \"time\": \"11:00\", \"available\": true },\n    { \"time\": \"12:00\", \"available\": false },\n    { \"time\": \"13:00\", \"available\": false },\n    { \"time\": \"14:00\", \"available\": true },\n    { \"time\": \"15:00\", \"available\": true },\n    { \"time\": \"16:00\", \"available\": true },\n    { \"time\": \"17:00\", \"available\": true },\n    { \"time\": \"18:00\", \"available\": true },\n    { \"time\": \"19:00\", \"available\": true },\n    { \"time\": \"20:00\", \"available\": true }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Upload Venue Photos",
+          "description": "Upload 1–5 photos for a venue (multipart/form-data). Appends to existing photos; total must not exceed 5. Field name: photos.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data.photos.length > 0) {",
+                  "  pm.collectionVariables.set('photoUrl', res.data.photos[0]);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/owner/venues/{{venueId}}/photos", "host": ["{{baseUrl}}"], "path": ["owner","venues","{{venueId}}","photos"] },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "photos", "type": "file", "description": "JPEG/PNG/WebP — max 5 MB each, up to 5 files total per venue" },
+                { "key": "photos", "type": "file", "disabled": true, "description": "Optional second photo" },
+                { "key": "photos", "type": "file", "disabled": true, "description": "Optional third photo" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Venue Photo",
+          "description": "Remove a single photo from a venue by its Cloudinary URL. Venue must retain at least 1 photo.",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/owner/venues/{{venueId}}/photos", "host": ["{{baseUrl}}"], "path": ["owner","venues","{{venueId}}","photos"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"{{photoUrl}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Reorder Venue Photos",
+          "description": "Set a new display order for venue photos. The array must contain exactly the same URLs already on the venue.",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/owner/venues/{{venueId}}/photos/reorder", "host": ["{{baseUrl}}"], "path": ["owner","venues","{{venueId}}","photos","reorder"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ids\": [\n    \"<photo-uuid-2>\",\n    \"<photo-uuid-1>\"\n  ]\n}"
             }
           }
         },

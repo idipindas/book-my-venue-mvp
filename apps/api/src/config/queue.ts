@@ -1,5 +1,5 @@
 import { Queue, Worker } from 'bullmq';
-import { redis } from './redis';
+import { ioredisClient as redis } from './redis';
 import { AppDataSource } from './database';
 import { Booking, BookingStatus } from '../entities/Booking.entity';
 import { Availability } from '../entities/Availability.entity';

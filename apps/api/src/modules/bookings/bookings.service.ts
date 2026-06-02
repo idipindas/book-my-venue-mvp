@@ -1,5 +1,5 @@
 import { AppDataSource } from '../../config/database';
-import { redis } from '../../config/redis';
+import { ioredisClient as redis } from '../../config/redis';
 import { bookingQueue } from '../../config/queue';
 import { Booking, BookingStatus } from '../../entities/Booking.entity';
 import { Venue, VenueStatus } from '../../entities/Venue.entity';

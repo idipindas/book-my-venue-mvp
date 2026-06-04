@@ -17,4 +17,7 @@ export const AppDataSource = new DataSource({
   entities: [User, Venue, VenuePhoto, Availability, Booking, Payment, Notification],
   migrations: ['src/migrations/*.ts'],
   subscribers: [],
+  ssl:{
+    rejectUnauthorized: false
+  }
 });

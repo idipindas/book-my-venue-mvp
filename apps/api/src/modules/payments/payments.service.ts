@@ -2,7 +2,7 @@ import { AppDataSource } from '../../config/database';
 import { Booking, BookingStatus } from '../../entities/Booking.entity';
 import { Payment, PaymentStatus } from '../../entities/Payment.entity';
 import { Availability } from '../../entities/Availability.entity';
-import { razorpay, verifyWebhookSignature } from '../../lib/razorpay';
+import { razorpay, verifyWebhookSignature, verifyPaymentSignature } from '../../lib/razorpay';
 import { AppError } from '../../lib/errors';
 
 const bookingRepo = () => AppDataSource.getRepository(Booking);
@@ -86,6 +86,59 @@ export const PaymentsService = {
     } finally {
       await qr.release();
     }
+  },
+
+  async verify(
+    userId: string,
+    data: { bookingId: string; razorpayOrderId: string; razorpayPaymentId: string; razorpaySignature: string }
+  ) {
+    const { bookingId, razorpayOrderId, razorpayPaymentId, razorpaySignature } = data;
+
+    if (!verifyPaymentSignature(razorpayOrderId, razorpayPaymentId, razorpaySignature))
+      throw new AppError('INVALID_SIGNATURE', 'Payment signature mismatch.', 400);
+
+    const booking = await bookingRepo().findOne({ where: { id: bookingId, userId } });
+    if (!booking) throw new AppError('BOOKING_NOT_FOUND', 'Booking not found.', 404);
+
+    const payment = await paymentRepo().findOne({ where: { bookingId } });
+    if (!payment) throw new AppError('PAYMENT_NOT_FOUND', 'Payment record not found.', 404);
+
+    if (payment.status === PaymentStatus.SUCCESS)
+      return { status: 'already_confirmed', bookingId };
+
+    const qr = AppDataSource.createQueryRunner();
+    await qr.connect();
+    await qr.startTransaction();
+
+    try {
+      payment.status = PaymentStatus.SUCCESS;
+      payment.gatewayId = razorpayPaymentId;
+      await qr.manager.save(payment);
+
+      booking.status = BookingStatus.CONFIRMED;
+      await qr.manager.save(booking);
+
+      const avail = await qr.manager.findOne(Availability, {
+        where: { venueId: booking.venueId, date: booking.date },
+      });
+      if (avail) {
+        avail.slots = avail.slots.map((s) =>
+          s.time >= booking.startTime && s.time < booking.endTime
+            ? { ...s, available: false }
+            : s
+        );
+        await qr.manager.save(avail);
+      }
+
+      await qr.commitTransaction();
+    } catch (err) {
+      await qr.rollbackTransaction();
+      throw err;
+    } finally {
+      await qr.release();
+    }
+
+    return { status: 'confirmed', bookingId };
   },
 
   async refund(userId: string, bookingId: string) {

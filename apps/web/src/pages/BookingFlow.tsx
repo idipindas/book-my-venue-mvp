@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { ChevronRight, Users } from 'lucide-react';
 import { useVenue, useVenueAvailability } from '@/hooks/useVenues';
 import { useCreateBooking } from '@/hooks/useBookings';
+import { useRazorpayCheckout } from '@/hooks/useRazorpay';
 import { SlotPicker } from '@/components/booking/SlotPicker';
 import { BookingSummary } from '@/components/booking/BookingSummary';
 import { Button } from '@/components/ui/Button';
@@ -30,6 +31,7 @@ export default function BookingFlow() {
   const { data: venue, isLoading } = useVenue(id!);
   const { data: availability } = useVenueAvailability(id!, date);
   const { mutate: createBooking, isPending, data: newBooking } = useCreateBooking();
+  const { checkout } = useRazorpayCheckout();
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm({
     resolver: zodResolver(guestSchema),
@@ -164,9 +166,15 @@ export default function BookingFlow() {
                   Your booking is pending payment. Complete payment to confirm your slot.
                 </p>
                 <div className="flex flex-col gap-2 pt-2">
-                  <Button fullWidth variant="accent">Complete Payment via Razorpay</Button>
+                  <Button
+                    fullWidth
+                    variant="accent"
+                    onClick={() => newBooking && checkout(newBooking.id, calcTotal(), venue.name)}
+                  >
+                    Complete Payment via Razorpay
+                  </Button>
                   <Button fullWidth variant="outline" onClick={() => navigate('/dashboard/bookings')}>
-                    View My Bookings
+                    Pay Later / View Bookings
                   </Button>
                 </div>
               </div>

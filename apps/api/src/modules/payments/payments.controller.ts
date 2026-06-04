@@ -11,6 +11,15 @@ export const PaymentsController = {
     }
   },
 
+  async verify(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await PaymentsService.verify(req.user!.id, req.body);
+      res.json({ success: true, data });
+    } catch (err) {
+      next(err);
+    }
+  },
+
   async webhook(req: Request, res: Response, next: NextFunction) {
     try {
       const signature = req.headers['x-razorpay-signature'] as string;

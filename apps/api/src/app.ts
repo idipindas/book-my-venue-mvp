@@ -17,7 +17,11 @@ const app = express();
 
 app.use(
   pinoHttp({
-    logger,
+    level: config.NODE_ENV === 'production' ? 'info' : 'debug',
+    transport:
+      config.NODE_ENV !== 'production'
+        ? { target: 'pino-pretty', options: { colorize: true } }
+        : undefined,
     customLogLevel: (_req, res) => {
       if (res.statusCode >= 500) return 'error';
       if (res.statusCode >= 400) return 'warn';

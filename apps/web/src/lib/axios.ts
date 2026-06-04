@@ -1,7 +1,11 @@
 import axios from 'axios';
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL
+  ? `${import.meta.env.VITE_API_BASE_URL}/api`
+  : '/api';
+
 export const api = axios.create({
-  baseURL: '/api',
+  baseURL: BASE_URL,
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -38,7 +42,7 @@ api.interceptors.response.use(
           : null;
 
         if (refreshToken) {
-          const { data } = await axios.post('/api/auth/refresh', { refreshToken });
+          const { data } = await axios.post(`${BASE_URL}/auth/refresh`, { refreshToken });
           // Update localStorage directly so subsequent requests pick it up
           const parsed = JSON.parse(stored!) as { state: Record<string, unknown> };
           parsed.state.accessToken = data.data.accessToken;

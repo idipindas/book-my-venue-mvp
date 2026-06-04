@@ -4,6 +4,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
+import pinoHttp from 'pino-http';
 import { AppDataSource } from './config/database';
 import { redis } from './config/redis';
 import { startBookingWorker } from './config/queue';
@@ -13,6 +14,21 @@ import { errorHandler } from './middleware/error.middleware';
 import apiRouter from './routes/index';
 
 const app = express();
+
+app.use(
+  pinoHttp({
+    logger,
+    customLogLevel: (_req, res) => {
+      if (res.statusCode >= 500) return 'error';
+      if (res.statusCode >= 400) return 'warn';
+      return 'info';
+    },
+    customSuccessMessage: (req, res) =>
+      `${req.method} ${req.url} ${res.statusCode}`,
+    customErrorMessage: (req, res) =>
+      `${req.method} ${req.url} ${res.statusCode}`,
+  })
+);
 
 app.use(helmet());
 app.use(cors({ origin: config.CLIENT_URL, credentials: true }));

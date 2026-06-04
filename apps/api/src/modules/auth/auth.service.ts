@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import { OAuth2Client } from 'google-auth-library';
 import { AppDataSource } from '../../config/database';
-import { redis } from '../../config/redis';
+import { redisSet, redisGet, redisDel } from '../../config/redis';
 import { User, Role } from '../../entities/User.entity';
 import { config } from '../../config/env';
 import { AppError } from '../../lib/errors';
@@ -35,12 +35,11 @@ function generateTokens(userId: string, role: Role) {
 }
 
 async function storeRefreshToken(userId: string, token: string): Promise<void> {
-  const ttl = 7 * 24 * 60 * 60; // 7 days
-  await redis.set(`refresh:${userId}:${token}`, '1', 'EX', ttl);
+  await redisSet(`refresh:${userId}:${token}`, '1', 7 * 24 * 60 * 60);
 }
 
 async function revokeRefreshToken(userId: string, token: string): Promise<void> {
-  await redis.del(`refresh:${userId}:${token}`);
+  await redisDel(`refresh:${userId}:${token}`);
 }
 
 export const AuthService = {
@@ -59,7 +58,7 @@ export const AuthService = {
     });
     await userRepo().save(user);
 
-    await redis.set(`verify:${verifyToken}`, user.id, 'EX', 24 * 60 * 60);
+    await redisSet(`verify:${verifyToken}`, user.id, 24 * 60 * 60);
 
     await sendMail({
       to: user.email,
@@ -143,7 +142,7 @@ export const AuthService = {
       throw new AppError('INVALID_TOKEN', 'Invalid refresh token.', 401);
     }
 
-    const exists = await redis.get(`refresh:${payload.sub}:${dto.refreshToken}`);
+    const exists = await redisGet(`refresh:${payload.sub}:${dto.refreshToken}`);
     if (!exists) throw new AppError('INVALID_TOKEN', 'Refresh token revoked or expired.', 401);
 
     const user = await userRepo().findOne({ where: { id: payload.sub } });
@@ -157,11 +156,11 @@ export const AuthService = {
   },
 
   async verifyEmail(dto: VerifyEmailDto) {
-    const userId = await redis.get(`verify:${dto.token}`);
+    const userId = await redisGet(`verify:${dto.token}`);
     if (!userId) throw new AppError('INVALID_TOKEN', 'Verification token invalid or expired.', 400);
 
     await userRepo().update(userId, { isVerified: true });
-    await redis.del(`verify:${dto.token}`);
+    await redisDel(`verify:${dto.token}`);
   },
 
   async forgotPassword(email: string) {
@@ -169,7 +168,7 @@ export const AuthService = {
     if (!user) return; // silently succeed to prevent email enumeration
 
     const token = uuidv4();
-    await redis.set(`reset:${token}`, user.id, 'EX', 60 * 60);
+    await redisSet(`reset:${token}`, user.id, 60 * 60);
 
     await sendMail({
       to: user.email,
@@ -179,11 +178,11 @@ export const AuthService = {
   },
 
   async resetPassword(dto: ResetPasswordDto) {
-    const userId = await redis.get(`reset:${dto.token}`);
+    const userId = await redisGet(`reset:${dto.token}`);
     if (!userId) throw new AppError('INVALID_TOKEN', 'Reset token invalid or expired.', 400);
 
     const passwordHash = await bcrypt.hash(dto.password, 12);
     await userRepo().update(userId, { passwordHash });
-    await redis.del(`reset:${dto.token}`);
+    await redisDel(`reset:${dto.token}`);
   },
 };

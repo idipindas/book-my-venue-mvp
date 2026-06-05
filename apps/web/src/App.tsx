@@ -5,6 +5,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Role } from '@/types';
 import { Toaster } from '@/components/ui/Toaster';
 import { PageSpinner } from '@/components/ui/Spinner';
+import { BottomNav } from '@/components/layout/BottomNav';
 
 const Home = lazy(() => import('@/pages/Home'));
 const Venues = lazy(() => import('@/pages/Venues'));
@@ -35,6 +36,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <Toaster />
+      <BottomNav />
       <Suspense fallback={<Fallback />}>
         <Routes>
           {/* Public */}
